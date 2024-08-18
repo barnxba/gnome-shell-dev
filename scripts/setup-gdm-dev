@@ -1,0 +1,15 @@
+#!/bin/bash -x
+
+TOOLBOX=gnome-shell-devel                                                                                                          
+SRCDIR=$HOME/src/gdm
+GDM_VERSION=46.2
+
+podman start $TOOLBOX                                                           
+podman exec $TOOLBOX dnf install cmake dconf-devel accountsservice-devel itstool -y
+
+podman exec -u $USER -w $SRCDIR $TOOLBOX rm -rf build
+podman exec -u $USER -w $SRCDIR $TOOLBOX git checkout $GDM_VERSION
+podman exec -u $USER -w $SRCDIR $TOOLBOX meson setup --prefix=/usr -Dbuildtype=debug -Doptimization=g build
+podman exec -u $USER -w $SRCDIR $TOOLBOX meson compile -C build                          
+podman exec -w $SRCDIR $TOOLBOX meson install -C build                          
+
