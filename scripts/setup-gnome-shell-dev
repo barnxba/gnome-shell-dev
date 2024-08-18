@@ -1,0 +1,21 @@
+#!/bin/bash
+
+TOOLBOX=gnome-shell-devel                                                                                                          
+SRCDIR=$HOME/src/gnome-shell                                                    
+MUTTER_VERSION=46.4
+SHELL_VERSION=46.4
+
+$SRCDIR/tools/toolbox/create-toolbox.sh --skip-mutter --builder --version ${SHELL_VERSION%.*}
+
+podman start $TOOLBOX                                                           
+podman exec $TOOLBOX /usr/libexec/install-meson-project.sh -Dbuildtype=debug https://gitlab.gnome.org/GNOME/mutter $MUTTER_VERSION
+
+podman exec -u $USER -w $SRCDIR $TOOLBOX rm -rf build
+podman exec -u $USER -w $SRCDIR $TOOLBOX git checkout $SHELL_VERSION 
+podman exec -u $USER -w $SRCDIR $TOOLBOX meson setup --prefix=/usr -Dbuildtype=debug -Doptimization=g build
+podman exec -u $USER -w $SRCDIR $TOOLBOX meson compile -C build                          
+podman exec -w $SRCDIR $TOOLBOX meson install -C build
+
+# nice to have
+podman exec $TOOLBOX dnf install -y vim
+
